@@ -202,3 +202,11 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
 
   for edge in edges_output:
       file.write("l " + str(edge[0] + 1) + " " + str(edge[1] + 1) + "\n")
+
+  file.close()
+  file = open("dataset/augmented_dataset/output/" + file_name + str(idx) + "_output.txt", "w")
+
+  for vertex in vertex_output:
+      file.write(str(vertex) + " ")
+
+  file.close()
