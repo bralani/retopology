@@ -3,7 +3,7 @@ import numpy as np
 import networkx as nx
 import pyvista
 import pyacvd
-
+import os
 
 def leggi_file_output(file_path):
     vertici = []
@@ -32,7 +32,8 @@ def data_augmentation(url):
 
   print("Augmenting " + url + " ...")
   # take the name of the file
-  file_name = url.split('/')[-1].split('.')[0]
+  file_name = os.path.basename(url).split('.')[0]
+  #file_name = url.split('/')[-1].split('.')[0]
 
   vertices_output, edges_output = leggi_file_output('dataset/original_dataset/output/' + file_name + '_output.obj')
   vertices_output.insert(0, [0, 0, 0])
