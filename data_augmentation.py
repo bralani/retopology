@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 import pyvista
 import pyacvd
+import random
 import os
 
 def leggi_file_output(file_path):
@@ -28,20 +29,48 @@ def leggi_file_output(file_path):
 
     return vertici, lati
 
-def data_augmentation(url):
+def leggi_obj(file_path):
+    vertici = []
+    facce = []
 
-  print("Augmenting " + url + " ...")
+    with open(file_path, 'r') as file:
+        for line in file:
+            if line.startswith('v '):
+                vertice = list(map(float, line.strip().split()[1:]))
+                vertici.append(vertice)
+            elif line.startswith('f '):
+                face = line.strip().split()[1:]
+                # Controllo se la faccia è un quad o un tris
+                if len(face) == 4:
+                    face = line.strip().split()[1:]
+                faccia = [int(idx.split('/')[0]) for idx in face]
+                facce.append(faccia)
+
+    return vertici, facce
+
+def faces_to_edges(faces):
+    edges = []
+    for face in faces:
+        for i in range(len(face)):
+            edge = [face[i], face[(i+1)%len(face)]]
+            edges.append(edge)
+    return edges
+
+def data_preprocessing(url):
+
+  print("Preprocessing " + url + " ...")
   # take the name of the file
   file_name = os.path.basename(url).split('.')[0]
   #file_name = url.split('/')[-1].split('.')[0]
 
-  vertices_output, edges_output = leggi_file_output('dataset/original_dataset/output/' + file_name + '_output.obj')
+  vertices_output, faces_output = leggi_obj(url)
+  edges_output = faces_to_edges(faces_output)
   vertices_output.insert(0, [0, 0, 0])
 
   mesh = pyvista.read(url)
 
-  subdivisions = [1, 2, 3]
-  clusters = [10000, 20000, 30000, 40000]
+  subdivisions = [random.randint(1,3)]
+  clusters = [random.randrange(10000, 20001)]
   idx = 1
   for subdivide in subdivisions:
       for cluster in clusters:
@@ -66,6 +95,7 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
   graph_output.add_nodes_from(range(len(vertices_output)))
   graph_output.add_edges_from(edges_output)
 
+  
   # construct faces with the right format
   faces = []
   i = 0
@@ -81,6 +111,7 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
                         faces=faces)
 
 
+  '''
 
   # edges without duplication
   edges = mesh.edges_unique
@@ -194,8 +225,12 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
 
             break
 
+  '''
+
   # save the output
-  trimesh.exchange.export.export_mesh(mesh, 'dataset/augmented_dataset/input/' + file_name + str(idx) +'.obj')
+  trimesh.exchange.export.export_mesh(mesh, 'new_dataset/train/input/triangles/' + file_name + '.obj')
+
+  '''
   file = open("dataset/augmented_dataset/output/" + file_name + str(idx) + "_output.obj", "w")
 
   for vertex in vertex_output:
@@ -210,4 +245,4 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
   for vertex in vertex_output:
       file.write(str(vertex) + " ")
 
-  file.close()
+  file.close()'''
