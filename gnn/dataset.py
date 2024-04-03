@@ -55,6 +55,10 @@ class HumanSegOrigDataset(Dataset):
             target_dirpath = os.path.join(self.root_dir, "train", "output")
             target_files = [os.path.join(target_dirpath, fname) for fname in os.listdir(target_dirpath) if os.path.isfile(os.path.join(target_dirpath, fname))]
             mesh_files = [os.path.join(mesh_dirpath, fname) for fname in os.listdir(mesh_dirpath) if os.path.isfile(os.path.join(mesh_dirpath, fname))]
+
+            mesh_files = mesh_files[:1]
+            target_files = target_files[:1]
+
         else:
 
             mesh_dirpath = os.path.join(self.root_dir, "test", "input", "triangles")
@@ -62,6 +66,14 @@ class HumanSegOrigDataset(Dataset):
             
             target_files = [os.path.join(target_dirpath, fname) for fname in os.listdir(target_dirpath) if os.path.isfile(os.path.join(target_dirpath, fname))]
             mesh_files = [os.path.join(mesh_dirpath, fname) for fname in os.listdir(mesh_dirpath) if os.path.isfile(os.path.join(mesh_dirpath, fname))]
+
+            # take random indices of the files
+            indices = np.random.permutation(len(mesh_files))
+            indices = indices[:1]
+
+            mesh_files = [mesh_files[i] for i in indices]
+            target_files = [target_files[i] for i in indices]
+
 
         print("loading {} meshes".format(len(mesh_files)))
 
