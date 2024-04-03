@@ -22,7 +22,7 @@ class HumanSegOrigDataset(Dataset):
         self.root_dir = root_dir
         self.cache_dir = os.path.join(root_dir, "cache")
         self.op_cache_dir = op_cache_dir
-        self.n_class = 6
+        self.n_class = 4
 
         # store in memory
         self.verts_list = []
@@ -53,15 +53,15 @@ class HumanSegOrigDataset(Dataset):
             
             mesh_dirpath = os.path.join(self.root_dir, "train", "input", "triangles")
             target_dirpath = os.path.join(self.root_dir, "train", "output")
-            target_files = [os.path.join(target_dirpath, fname) for fname in os.listdir(target_dirpath) if os.path.isfile(os.path.join(target_dirpath, fname)) and "karate" in fname]
-            mesh_files = [os.path.join(mesh_dirpath, fname) for fname in os.listdir(mesh_dirpath) if os.path.isfile(os.path.join(mesh_dirpath, fname)) and "karate" in fname]
+            target_files = [os.path.join(target_dirpath, fname) for fname in os.listdir(target_dirpath) if os.path.isfile(os.path.join(target_dirpath, fname))]
+            mesh_files = [os.path.join(mesh_dirpath, fname) for fname in os.listdir(mesh_dirpath) if os.path.isfile(os.path.join(mesh_dirpath, fname))]
         else:
 
-            mesh_dirpath = os.path.join(self.root_dir, "train", "input", "triangles")
-            target_dirpath = os.path.join(self.root_dir, "train", "output")
+            mesh_dirpath = os.path.join(self.root_dir, "test", "input", "triangles")
+            target_dirpath = os.path.join(self.root_dir, "test", "output")
             
-            target_files = [os.path.join(target_dirpath, fname) for fname in os.listdir(target_dirpath) if os.path.isfile(os.path.join(target_dirpath, fname)) and "female" in fname]
-            mesh_files = [os.path.join(mesh_dirpath, fname) for fname in os.listdir(mesh_dirpath) if os.path.isfile(os.path.join(mesh_dirpath, fname)) and "female" in fname]
+            target_files = [os.path.join(target_dirpath, fname) for fname in os.listdir(target_dirpath) if os.path.isfile(os.path.join(target_dirpath, fname))]
+            mesh_files = [os.path.join(mesh_dirpath, fname) for fname in os.listdir(mesh_dirpath) if os.path.isfile(os.path.join(mesh_dirpath, fname))]
 
         print("loading {} meshes".format(len(mesh_files)))
 
@@ -89,11 +89,6 @@ class HumanSegOrigDataset(Dataset):
 
         for ind, labels in enumerate(self.labels_list):
             self.labels_list[ind] = labels
-
-        for labels in self.labels_list:
-            if not ((labels >= 0) & (labels < self.n_class)).all():
-                print("Trovate etichette al di fuori dell'intervallo [0, n_class-1]")
-                break
 
         # Precompute operators
         self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list = diffusion_net.geometry.get_all_operators(self.verts_list, self.faces_list, k_eig=self.k_eig, op_cache_dir=self.op_cache_dir)

@@ -24,7 +24,7 @@ device = torch.device('cuda:0')
 dtype = torch.float32
 
 # problem/dataset things
-n_class = 6
+n_class = 4
 
 # model 
 input_features = args.input_features # one of ['xyz', 'hks']
@@ -32,7 +32,7 @@ k_eig = 128
 
 # training settings
 train = not args.evaluate
-n_epoch = 100
+n_epoch = 10000
 lr = 1e-3
 decay_every = 50
 decay_rate = 0.5
@@ -49,12 +49,12 @@ dataset_path = os.path.normpath(dataset_path)
 # === Load datasets
 
 # Load the test dataset
-test_dataset = HumanSegOrigDataset(dataset_path, train=False, k_eig=k_eig, use_cache=False, op_cache_dir=op_cache_dir)
+test_dataset = HumanSegOrigDataset(dataset_path, train=False, k_eig=k_eig, use_cache=True, op_cache_dir=op_cache_dir)
 test_loader = DataLoader(test_dataset, batch_size=None)
 
 # Load the train dataset
 if train:
-    train_dataset = HumanSegOrigDataset(dataset_path, train=True, k_eig=k_eig, use_cache=False, op_cache_dir=op_cache_dir)
+    train_dataset = HumanSegOrigDataset(dataset_path, train=True, k_eig=k_eig, use_cache=True, op_cache_dir=op_cache_dir)
     train_loader = DataLoader(train_dataset, batch_size=None, shuffle=True)
 
 
@@ -68,9 +68,12 @@ model = diffusion_net.layers.DiffusionNet(C_in=C_in,
                                           C_width=128, 
                                           N_block=4, 
                                           #last_activation=lambda x : torch.nn.functional.log_softmax(x,dim=-1),
-                                          outputs_at='faces', 
+                                          outputs_at='vertices', 
                                           dropout=True)
 
+if os.path.exists('saved_model.pth'):
+    model.load_state_dict(torch.load('saved_model.pth'))
+    print("Loaded model from: " + 'saved_model.pth')
 
 model = model.to(device)
 
@@ -124,7 +127,8 @@ def train_epoch(epoch):
         preds = model(features, mass, L=L, evals=evals, evecs=evecs, gradX=gradX, gradY=gradY, faces=faces)
 
         # Calcola la perdita di errore quadratico medio (MSE)
-        loss = torch.nn.functional.mse_loss(preds, labels.float())
+        loss = torch.nn.functional.mse_loss(preds, labels.float(), reduction='none')
+        loss = loss.sum()
 
         # Calcola l'errore per il batch corrente
         this_loss = loss.item()
@@ -182,10 +186,9 @@ def test():
             # Apply the model
             preds = model(features, mass, L=L, evals=evals, evecs=evecs, gradX=gradX, gradY=gradY, faces=faces)
 
-            print('\n', preds[0,:], '\n', preds[1,:], '\n', preds[2,:], '\n', preds[3,:])
-
             # Calcola la perdita di errore quadratico medio (MSE)
-            loss = torch.nn.functional.mse_loss(preds, labels.float())
+            loss = torch.nn.functional.mse_loss(preds, labels.float(), reduction='none')
+            loss = loss.sum()
 
             # Calcola l'errore per il batch corrente
             this_loss = loss.item()
@@ -202,6 +205,7 @@ def test():
     mse = torch.nn.functional.mse_loss(preds, labels)  # Per RMSE
     mae = torch.nn.functional.l1_loss(preds, labels)  # Per MAE
     rmse = torch.sqrt(mse)
+    print('\n', preds[0,:], '\n', preds[1,:], '\n', preds[2,:], '\n', preds[3,:])
 
     test_loss = total_loss / total_num
     return test_loss, mse, mae, rmse
@@ -211,6 +215,9 @@ if train:
     print("Training...")
 
     for epoch in range(n_epoch):
+        if epoch % 100 == 0 and epoch > 0:
+            torch.save(model.state_dict(), 'saved_model.pth')
+            print("Model saved in: " + 'saved_model.pth')
         train_loss = train_epoch(epoch)
         test_loss, _, _, _ = test()
         print("Epoch {} - Train overall: {:06.3f}%  Test overall: {:06.3f}%".format(epoch, 100*train_loss, 100*test_loss))
