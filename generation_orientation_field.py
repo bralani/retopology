@@ -1,4 +1,5 @@
 import numpy as np
+import math, os
 from collections import defaultdict
 
 
@@ -111,6 +112,35 @@ def distanza_vertice_a_segmento(vertice, punto1, punto2):
 
     return distanza
 
+def cartesian_to_spherical(vet):
+
+    # normalize the vector
+    norm = np.linalg.norm(vet)
+    vet = vet / norm
+
+    x, y, z = vet
+
+    theta = math.acos(z)
+    phi = math.atan2(y, x)
+
+    return theta, phi
+
+def generate_orientations(file):
+  file_name = os.path.basename(file)
+  file_triangle = "./new_dataset/test/input/triangles/" + file_name
+
+  orientation_fields = generate_output(file_triangle, file)
+  orientation_fields_reshaped = orientation_fields.reshape(orientation_fields.shape[0], -1)
+
+
+  # save the orientation fields in a txt file
+  output_file = "./new_dataset/test/output/" + file_name
+  np.savetxt(output_file, orientation_fields_reshaped)
+
+
+  print("Orientation fields saved in: ", output_file)
+
+
 def generate_output(url_triangle, url_quads):
 
     vertices_ground_truth, faces = leggi_obj(url_quads)
@@ -149,6 +179,10 @@ def generate_output(url_triangle, url_quads):
         # rendi unitari i vettori u e v
         #u_normalized = u / np.linalg.norm(u)
         #v_normalized = v / np.linalg.norm(v)
+
+        # converti i vettori u e v in coordinate sferiche
+        u = cartesian_to_spherical(u)
+        v = cartesian_to_spherical(v)
 
         orientation_fields.append([u, v])
 
