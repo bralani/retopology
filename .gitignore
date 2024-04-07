@@ -163,4 +163,6 @@ cython_debug/
 
 .vscode/
 dataset/augmented_dataset/
+gnn/data
+new_dataset/cache
 input.txt
