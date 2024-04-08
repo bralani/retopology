@@ -1,8 +1,9 @@
 import os
-import sys
+import sys, math
 import numpy as np
 import argparse
 import torch
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -21,7 +22,11 @@ args = parser.parse_args()
 
 
 # system things
-device = torch.device('cuda:0')
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+else:
+    device = torch.device('cpu')
+
 dtype = torch.float32
 
 # problem/dataset things
@@ -47,83 +52,45 @@ op_cache_dir = os.path.join(base_path, "data", "op_cache")
 dataset_path = os.path.join(base_path, "..", "new_dataset")
 dataset_path = os.path.normpath(dataset_path)
 
-# === Load datasets
-
-k1 = []
-with open('D:/retopology/k1.txt', 'r') as file:
-    for line in file:
-        line = line.strip()  # Rimuove spazi vuoti e caratteri di nuova linea
-        if line:  # Ignora le linee vuote
-            try:
-                numbers = [float(num) for num in line.split()]
-                k1.extend(numbers)
-            except ValueError:
-                print("Errore: Non è stato possibile convertire la stringa in float")
-
-# normalize k1
-mean = np.mean(k1)
-std_dev = np.std(k1)
-
-k1 = (k1 - mean) / std_dev
+'''
+# normalize k1 using standard scaler of scikit learn
+scaler = StandardScaler()
+k1 = np.array(k1).reshape(-1, 1)
+k1 = scaler.fit_transform(k1)
 k1_tensor = torch.tensor(k1, dtype=torch.float32)
 k1_tensor = k1_tensor.to(device)
 
-
-k2 = []
-with open('D:/retopology/k2.txt', 'r') as file:
-    for line in file:
-        line = line.strip()  # Rimuove spazi vuoti e caratteri di nuova linea
-        if line:  # Ignora le linee vuote
-            try:
-                numbers = [float(num) for num in line.split()]
-                k2.extend(numbers)
-            except ValueError:
-                print("Errore: Non è stato possibile convertire la stringa in float")
-
-# Calcola la media e la deviazione standard dei dati
-mean = np.mean(k2)
-std_dev = np.std(k2)
-k2 = (k2 - mean) / std_dev
+# normalize k2 using standard scaler of scikit learn
+scaler = StandardScaler()
+k2 = np.array(k2).reshape(-1, 1)
+k2 = scaler.fit_transform(k2)
 k2_tensor = torch.tensor(k2, dtype=torch.float32)
 k2_tensor = k2_tensor.to(device)
 
 
-ks1 = []
-with open('D:/retopology/ks1.txt', 'r') as file:
-    for line in file:
-        line = line.strip()  # Rimuove spazi vuoti e caratteri di nuova linea
-        if line:  # Ignora le linee vuote
-            try:
-                numbers = [float(num) for num in line.split()]
-                ks1.extend(numbers)
-            except ValueError:
-                print("Errore: Non è stato possibile convertire la stringa in float")
-
-# normalize ks1
-mean = np.mean(ks1)
-std_dev = np.std(ks1)
-ks1 = (ks1 - mean) / std_dev
+# normalize ks1 using standard scaler of scikit learn
+scaler = StandardScaler()
+ks1 = np.array(ks1).reshape(-1, 1)
+ks1 = scaler.fit_transform(ks1)
 ks1_tensor = torch.tensor(ks1, dtype=torch.float32)
 ks1_tensor = ks1_tensor.to(device)
 
 
-ks2 = []
-with open('D:/retopology/ks2.txt', 'r') as file:
-    for line in file:
-        line = line.strip()  # Rimuove spazi vuoti e caratteri di nuova linea
-        if line:  # Ignora le linee vuote
-            try:
-                numbers = [float(num) for num in line.split()]
-                ks2.extend(numbers)
-            except ValueError:
-                print("Errore: Non è stato possibile convertire la stringa in float")
-
-# normalize ks2
-mean = np.mean(ks2)
-std_dev = np.std(ks2)
-ks2 = (ks2 - mean) / std_dev
+# normalize ks2 using standard scaler of scikit learn
+scaler = StandardScaler()
+ks2 = np.array(ks2).reshape(-1, 1)
+ks2 = scaler.fit_transform(ks2)
 ks2_tensor = torch.tensor(ks2, dtype=torch.float32)
 ks2_tensor = ks2_tensor.to(device)
+
+
+
+t1_tensor = torch.tensor(t1, dtype=torch.float32)
+t1_tensor = t1_tensor.to(device)
+
+t2_tensor = torch.tensor(t2, dtype=torch.float32)
+t2_tensor = t2_tensor.to(device)
+'''
 
 # Load the test dataset
 test_dataset = HumanSegOrigDataset(dataset_path, train=False, k_eig=k_eig, use_cache=False, op_cache_dir=op_cache_dir)
@@ -138,7 +105,7 @@ if train:
 
 # === Create the model
 
-C_in={'xyz':3, 'hks':10}[input_features] # dimension of input features
+C_in={'xyz':3, 'hks':12}[input_features] # dimension of input features
 
 model = diffusion_net.layers.DiffusionNet(C_in=C_in,
                                           C_out=n_class,
@@ -176,7 +143,7 @@ def train_epoch(epoch):
     for data in tqdm(train_loader):
 
         # Get data
-        verts, faces, frames, mass, L, evals, evecs, gradX, gradY, labels = data
+        verts, faces, frames, mass, L, evals, evecs, gradX, gradY, labels, k1_tensor, k2_tensor, ks1_tensor, ks2_tensor, t1_tensor, t2_tensor = data
 
         # Move to device
         verts = verts.to(device)
@@ -189,6 +156,12 @@ def train_epoch(epoch):
         gradX = gradX.to(device)
         gradY = gradY.to(device)
         labels = labels.to(device)
+        k1_tensor = k1_tensor.to(device)
+        k2_tensor = k2_tensor.to(device)
+        ks1_tensor = ks1_tensor.to(device)
+        ks2_tensor = ks2_tensor.to(device)
+        t1_tensor = t1_tensor.to(device)
+        t2_tensor = t2_tensor.to(device)
         
         # Randomly rotate positions
         if augment_random_rotate:
@@ -197,20 +170,24 @@ def train_epoch(epoch):
         # Construct features
         if input_features == 'xyz':
             features = verts
-        elif input_features == 'hks':
-            features = diffusion_net.geometry.compute_hks_autoscale(evals, evecs, 6)
+        elif input_features == 'hks':            
+            features = diffusion_net.geometry.compute_hks_autoscale(evals, evecs, 4)
 
-            # Aggiungi k1 e k2 come feature
-            features = torch.cat([features, k1_tensor.unsqueeze(1), k2_tensor.unsqueeze(1)], dim=1)
-
-            features = torch.cat([features, ks1_tensor.unsqueeze(1), ks2_tensor.unsqueeze(1)], dim=1)
+            features2 = torch.stack([k1_tensor, k2_tensor, ks1_tensor, ks2_tensor], dim=1)  
+            features = torch.cat([features, features2], dim=1)
+            features = torch.cat([features, t1_tensor, t2_tensor], dim=1)
 
         # Apply the model
         preds = model(features, mass, L=L, evals=evals, evecs=evecs, gradX=gradX, gradY=gradY, faces=faces)
 
-        # Calcola la perdita di errore quadratico medio (MSE)
+        # Calcola la perdita di errore ABSOLUTE medio (MAE)
         loss = torch.nn.functional.mse_loss(preds, labels.float(), reduction='none')
         loss = loss.sum()
+
+        first_loss = torch.nn.functional.l1_loss(preds[:,0], labels[:,0].float(), reduction='none')
+        first_loss = first_loss.sum()
+        second_loss = torch.nn.functional.l1_loss(preds[:,1], labels[:,1].float(), reduction='none')
+        second_loss = second_loss.sum()
 
         # Calcola l'errore per il batch corrente
         this_loss = loss.item()
@@ -229,7 +206,7 @@ def train_epoch(epoch):
         optimizer.step()
         optimizer.zero_grad()
 
-    train_loss = total_loss / (total_num * 4)
+    train_loss = total_loss
     return train_loss
 
 
@@ -245,7 +222,7 @@ def test():
         for data in tqdm(test_loader):
 
             # Get data
-            verts, faces, frames, mass, L, evals, evecs, gradX, gradY, labels = data
+            verts, faces, frames, mass, L, evals, evecs, gradX, gradY, labels, k1_tensor, k2_tensor, ks1_tensor, ks2_tensor, t1_tensor, t2_tensor = data
 
             # Move to device
             verts = verts.to(device)
@@ -258,28 +235,29 @@ def test():
             gradX = gradX.to(device)
             gradY = gradY.to(device)
             labels = labels.to(device)
+            k1_tensor = k1_tensor.to(device)
+            k2_tensor = k2_tensor.to(device)
+            ks1_tensor = ks1_tensor.to(device)
+            ks2_tensor = ks2_tensor.to(device)
+            t1_tensor = t1_tensor.to(device)
+            t2_tensor = t2_tensor.to(device)
             
             # Construct features
             if input_features == 'xyz':
                 features = verts
             elif input_features == 'hks':
-                features = diffusion_net.geometry.compute_hks_autoscale(evals, evecs, 6)
+                features = diffusion_net.geometry.compute_hks_autoscale(evals, evecs, 4)
 
-                # Define tensor of zeros with the same number of rows as features
-                num_samples = features.size(0)
-                zero_tensor = torch.zeros(num_samples, 1, dtype=torch.float32)
-                zero_tensor = zero_tensor.to(device)
+                features2 = torch.stack([k1_tensor, k2_tensor, ks1_tensor, ks2_tensor], dim=1)  
+                features = torch.cat([features, features2], dim=1)
+                features = torch.cat([features, t1_tensor, t2_tensor], dim=1)
 
-                # Concatenate zero tensors to the end of features tensor instead of k1 and k2
-                features = torch.cat([features, zero_tensor, zero_tensor], dim=1)
-
-                features = torch.cat([features, zero_tensor, zero_tensor], dim=1)
 
             # Apply the model
             preds = model(features, mass, L=L, evals=evals, evecs=evecs, gradX=gradX, gradY=gradY, faces=faces)
 
-            # Calcola la perdita di errore quadratico medio (MSE)
-            loss = torch.nn.functional.mse_loss(preds, labels.float(), reduction='none')
+            # Calcola la perdita di errore quadratico medio (MAE)
+            loss = torch.nn.functional.l1_loss(preds, labels.float(), reduction='none')
             loss = loss.sum()
 
             # Calcola l'errore per il batch corrente
@@ -299,7 +277,7 @@ def test():
     rmse = torch.sqrt(mse)
     #print('\n', preds[0,:], '\n', preds[1,:], '\n', preds[2,:], '\n', preds[3,:])
 
-    test_loss = total_loss / (total_num * 4)
+    test_loss = total_loss
     return test_loss, mse, mae, rmse
 
 
@@ -307,9 +285,9 @@ if train:
     print("Training...")
 
     for epoch in range(n_epoch):
-        if epoch % 100 == 0 and epoch > 0:
-            torch.save(model.state_dict(), 'saved_model.pth')
-            print("Model saved in: " + 'saved_model.pth')
+        #if epoch % 100 == 0 and epoch > 0:
+        #    torch.save(model.state_dict(), 'saved_model.pth')
+        #    print("Model saved in: " + 'saved_model.pth')
         train_loss = train_epoch(epoch)
         test_loss, _, _, _ = test()
         print("Epoch {} - Train overall: {:06.3f}  Test overall: {:06.3f}".format(epoch, train_loss, test_loss))
