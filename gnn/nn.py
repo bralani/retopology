@@ -2,15 +2,17 @@ import os
 import sys, math
 import numpy as np
 import argparse
+from sklearn.discriminant_analysis import StandardScaler
 import torch
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from sklearn.preprocessing import MinMaxScaler, RobustScaler
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/"))  # add the path to the DiffusionNet src
 import diffusion_net
 from dataset import HumanSegOrigDataset
 
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/"))  # add the path to the DiffusionNet src
 
 # === Options
 
@@ -113,7 +115,7 @@ model = diffusion_net.layers.DiffusionNet(C_in=C_in,
                                           N_block=5, 
                                           #last_activation=lambda x : 
                                           outputs_at='vertices', 
-                                          dropout=False)
+                                          dropout=True)
 
 if os.path.exists('saved_model.pth'):
     model.load_state_dict(torch.load('saved_model.pth'))
@@ -206,7 +208,7 @@ def train_epoch(epoch):
         optimizer.step()
         optimizer.zero_grad()
 
-    train_loss = total_loss
+    train_loss = total_loss / (total_num * 4)
     return train_loss
 
 
@@ -257,7 +259,7 @@ def test():
             preds = model(features, mass, L=L, evals=evals, evecs=evecs, gradX=gradX, gradY=gradY, faces=faces)
 
             # Calcola la perdita di errore quadratico medio (MAE)
-            loss = torch.nn.functional.l1_loss(preds, labels.float(), reduction='none')
+            loss = torch.nn.functional.mse_loss(preds, labels.float(), reduction='none')
             loss = loss.sum()
 
             # Calcola l'errore per il batch corrente
@@ -277,7 +279,7 @@ def test():
     rmse = torch.sqrt(mse)
     #print('\n', preds[0,:], '\n', preds[1,:], '\n', preds[2,:], '\n', preds[3,:])
 
-    test_loss = total_loss
+    test_loss = total_loss / (total_num * 4)
     return test_loss, mse, mae, rmse
 
 

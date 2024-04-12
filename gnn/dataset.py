@@ -94,7 +94,7 @@ class HumanSegOrigDataset(Dataset):
 
             # take random indices of the files
             indices = np.random.permutation(len(mesh_files))
-            indices = indices[:20]
+            #indices = indices[:500]
 
             mesh_files = [mesh_files[i] for i in indices]
             target_files = [target_files[i] for i in indices]
@@ -109,7 +109,7 @@ class HumanSegOrigDataset(Dataset):
 
             # take random indices of the files
             indices = np.random.permutation(len(mesh_files))
-            indices = indices[:5]
+            indices = indices[:50]
 
             mesh_files = [mesh_files[i] for i in indices]
             target_files = [target_files[i] for i in indices]
@@ -164,7 +164,7 @@ class HumanSegOrigDataset(Dataset):
             # to torch
             verts = torch.tensor(np.ascontiguousarray(verts)).float()
             faces = torch.tensor(np.ascontiguousarray(faces))
-            #labels = torch.tensor(np.ascontiguousarray(labels))
+            #labels = torch.tensor(np.ascontiguousarray(labels))            
             target_values = torch.tensor(np.ascontiguousarray(target_values)).float()
 
             # center and unit scale
