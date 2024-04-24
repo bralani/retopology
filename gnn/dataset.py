@@ -2,15 +2,13 @@ import os
 import sys, math
 import numpy as np
 
-from sklearn.discriminant_analysis import StandardScaler
 import torch
 from torch.utils.data import Dataset
 
 import potpourri3d as pp3d
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/"))  # add the path to the DiffusionNet src
+sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/"))  # path to the DiffusionNet src
 import diffusion_net
-from diffusion_net.utils import toNP
 
 def normalize(arrays):
     
@@ -29,7 +27,7 @@ def normalize(arrays):
 
 def cartesian_to_spherical(vet):
 
-    # normalize the vector
+    # Normalize the vector
     norm = np.linalg.norm(vet)
     vet = vet / norm
 
@@ -40,9 +38,7 @@ def cartesian_to_spherical(vet):
 
     return theta, phi
 
-
-class HumanSegOrigDataset(Dataset):
-    """Human segmentation dataset from Maron et al (not the remeshed version from subsequent work)"""
+class MeshDataset(Dataset):
 
     def __init__(self, root_dir, train, k_eig=128, use_cache=True, op_cache_dir=None):
 
@@ -53,10 +49,10 @@ class HumanSegOrigDataset(Dataset):
         self.op_cache_dir = op_cache_dir
         self.n_class = 4
 
-        # store in memory
+        # Store in memory
         self.verts_list = []
         self.faces_list = []
-        self.labels_list = []  # per-face labels!!
+        self.targets_list = []  # Per-face targets
         self.k1_list = []
         self.k2_list = []
         self.ks1_list = []
@@ -64,8 +60,7 @@ class HumanSegOrigDataset(Dataset):
         self.t1_list = []
         self.t2_list = []
 
-
-        # check the cache
+        # Check the cache
         if use_cache:
             train_cache = os.path.join(self.cache_dir, "train.pt")
             test_cache = os.path.join(self.cache_dir, "test.pt")
@@ -73,12 +68,12 @@ class HumanSegOrigDataset(Dataset):
             print("using dataset cache path: " + str(load_cache))
             if os.path.exists(load_cache):
                 print("  --> loading dataset from cache")
-                self.verts_list, self.faces_list, self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list, self.labels_list = torch.load( load_cache)
+                self.verts_list, self.faces_list, self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list, self.targets_list = torch.load( load_cache)
                 return
             print("  --> dataset not in cache, repopulating")
 
 
-        # Load the meshes & labels
+        # Load the meshes & targets
 
         # Get all the files
         mesh_files = []
@@ -94,7 +89,6 @@ class HumanSegOrigDataset(Dataset):
 
             # take random indices of the files
             indices = np.random.permutation(len(mesh_files))
-            #indices = indices[:500]
 
             mesh_files = [mesh_files[i] for i in indices]
             target_files = [target_files[i] for i in indices]
@@ -109,7 +103,6 @@ class HumanSegOrigDataset(Dataset):
 
             # take random indices of the files
             indices = np.random.permutation(len(mesh_files))
-            indices = indices[:50]
 
             mesh_files = [mesh_files[i] for i in indices]
             target_files = [target_files[i] for i in indices]
@@ -126,7 +119,6 @@ class HumanSegOrigDataset(Dataset):
 
             target_values = np.loadtxt(target_files[iFile])
 
-
             k1 = []
             k2 = []
             ks1 = []
@@ -139,10 +131,9 @@ class HumanSegOrigDataset(Dataset):
                 next(file)
                 next(file)
 
-
                 for line in file:
-                    line = line.strip()  # Rimuove spazi vuoti e caratteri di nuova linea
-                    if line:  # Ignora le linee vuote
+                    line = line.strip()  # Remove empty spaces and new line characters
+                    if line:  # Ignore empty lines
                         try:
                             numbers = line.split()
                             k1.append(float(numbers[0]))
@@ -152,22 +143,14 @@ class HumanSegOrigDataset(Dataset):
                             t1.append(cartesian_to_spherical([float(numbers[4]), float(numbers[5]), float(numbers[6])]))
                             t2.append(cartesian_to_spherical([float(numbers[7]), float(numbers[8]), float(numbers[9])]))
                         except ValueError:
-                            print("Errore: Non è stato possibile convertire la stringa in float")
-                            
-            # apply min max scaler to the target values column by column
-            target_values[:, 0] = (target_values[:, 0]) / (np.pi)
-            target_values[:, 1] = (target_values[:, 1] + np.pi) / (2*np.pi)
-            target_values[:, 2] = (target_values[:, 2]) / (np.pi)
-            target_values[:, 3] = (target_values[:, 3] + np.pi) / (2*np.pi)
+                            print("Error: Could not convert string to float")
 
-
-            # to torch
+            # To torch
             verts = torch.tensor(np.ascontiguousarray(verts)).float()
-            faces = torch.tensor(np.ascontiguousarray(faces))
-            #labels = torch.tensor(np.ascontiguousarray(labels))            
+            faces = torch.tensor(np.ascontiguousarray(faces))     
             target_values = torch.tensor(np.ascontiguousarray(target_values)).float()
 
-            # center and unit scale
+            # Center and unit scale
             verts = diffusion_net.geometry.normalize_positions(verts)
 
             self.verts_list.append(verts)
@@ -186,26 +169,26 @@ class HumanSegOrigDataset(Dataset):
             self.ks2_list.append(ks2)
             self.t1_list.append(t1)
             self.t2_list.append(t2)
-            self.labels_list.append(target_values)
+            self.targets_list.append(target_values)
         
         self.k1_list = normalize(self.k1_list)
         self.k2_list = normalize(self.k2_list)
         self.ks1_list = normalize(self.ks1_list)
         self.ks2_list = normalize(self.ks2_list)
 
-        for ind, labels in enumerate(self.labels_list):
-            self.labels_list[ind] = labels
+        for ind, targets in enumerate(self.targets_list):
+            self.targets_list[ind] = targets
 
         # Precompute operators
         self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list = diffusion_net.geometry.get_all_operators(self.verts_list, self.faces_list, k_eig=self.k_eig, op_cache_dir=self.op_cache_dir)
 
-        # save to cache
+        # Save to cache
         if use_cache:
             diffusion_net.utils.ensure_dir_exists(self.cache_dir)
-            torch.save((self.verts_list, self.faces_list, self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list, self.labels_list), load_cache)
+            torch.save((self.verts_list, self.faces_list, self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list, self.targets_list), load_cache)
 
     def __len__(self):
         return len(self.verts_list)
 
     def __getitem__(self, idx):
-        return self.verts_list[idx], self.faces_list[idx], self.frames_list[idx], self.massvec_list[idx], self.L_list[idx], self.evals_list[idx], self.evecs_list[idx], self.gradX_list[idx], self.gradY_list[idx], self.labels_list[idx], self.k1_list[idx], self.k2_list[idx], self.ks1_list[idx], self.ks2_list[idx], self.t1_list[idx], self.t2_list[idx]
+        return self.verts_list[idx], self.faces_list[idx], self.frames_list[idx], self.massvec_list[idx], self.L_list[idx], self.evals_list[idx], self.evecs_list[idx], self.gradX_list[idx], self.gradY_list[idx], self.targets_list[idx], self.k1_list[idx], self.k2_list[idx], self.ks1_list[idx], self.ks2_list[idx], self.t1_list[idx], self.t2_list[idx]
