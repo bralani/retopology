@@ -71,7 +71,7 @@ model = diffusion_net.layers.DiffusionNet(C_in=C_in,
                                           dropout=True)
 
 if os.path.exists('saved_model.pth'):
-    model.load_state_dict(torch.load('saved_model.pth'))
+    model.load_state_dict(torch.load('saved_model.pth'), map_location=device)
     print('Loaded model from: saved_model.pth')
 
 model = model.to(device)
