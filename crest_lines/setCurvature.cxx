@@ -27,12 +27,11 @@ int main(int argc, char* argv[]) {
 }
 
 // required when using C++ compiler 
-extern "C" void crest_lines(int dV, int dF, int maxneighbor)
+extern "C" void crest_lines(int dV, int dF, int maxneighbor, const char* outputfile)
 {
   Polyhedron* mymesh = new Polyhedron();
   
   const char* inputfile = "input.txt";
-  const char* outputfile = "output.txt";
   
   mymesh->readmesh(dV, dF, maxneighbor, const_cast<char*>(inputfile), const_cast<char*>(outputfile));
   

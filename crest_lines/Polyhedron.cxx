@@ -244,7 +244,7 @@ void Polyhedron::SaveRmesh(char *fileout)
   fprintf(out, "%d\n", numberF);
   for (i = 0; i < numberV; i++)
   {
-    fprintf(out, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", k1[i], k2[i], t1[i]->x, t1[i]->y, t1[i]->z, t2[i]->x, t2[i]->y, t2[i]->z, normal[i]->x, normal[i]->y, normal[i]->z);
+    fprintf(out, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", k1[i], k2[i], ks1[i], ks2[i], t1[i]->x, t1[i]->y, t1[i]->z, t2[i]->x, t2[i]->y, t2[i]->z, normal[i]->x, normal[i]->y, normal[i]->z);
   }
   fclose(out);
 }
@@ -708,11 +708,11 @@ void Polyhedron::setRidgeRavine()
 
   delete[] check1v;
   delete[] check2v;
-  myf->PrintConnect("ridges.txt", ridge);
+  //myf->PrintConnect("ridges.txt", ridge);
 
   delete myg;
   delete myf;
-  myf2->PrintConnect("ravines.txt", ridge);
+  //myf2->PrintConnect("ravines.txt", ridge);
   delete myg2;
   delete myf2;
 }
@@ -1142,6 +1142,7 @@ void Polyhedron::SVDFit3Fast()
   }
 
   // salva su file k1, k2, ks1, ks2, t1, t2
+  /*
   FILE *fp;
   fp = fopen("k1.txt", "w");
   for (i = 0; i < numberV; i++)
@@ -1183,7 +1184,7 @@ void Polyhedron::SVDFit3Fast()
   {
     fprintf(fp, "%lf %lf %lf\n", t2[i]->x, t2[i]->y, t2[i]->z);
   }
-  fclose(fp);
+  fclose(fp);*/
 
   delete mysvd;
   delete[] w;
