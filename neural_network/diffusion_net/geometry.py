@@ -17,8 +17,8 @@ import sklearn.neighbors
 import robust_laplacian
 import potpourri3d as pp3d
 
-import diffusion_net.utils as utils
-from .utils import toNP
+from .network_utils import toNP
+from neural_network.diffusion_net import network_utils
 
 
 def norm(x, highdim=False):
@@ -383,11 +383,11 @@ def compute_operators(verts, faces, k_eig, normals=None):
     
     # === Convert back to torch
     massvec = torch.from_numpy(massvec_np).to(device=device, dtype=dtype)
-    L = utils.sparse_np_to_torch(L).to(device=device, dtype=dtype)
+    L = network_utils.sparse_np_to_torch(L).to(device=device, dtype=dtype)
     evals = torch.from_numpy(evals_np).to(device=device, dtype=dtype)
     evecs = torch.from_numpy(evecs_np).to(device=device, dtype=dtype)
-    gradX = utils.sparse_np_to_torch(gradX_np).to(device=device, dtype=dtype)
-    gradY = utils.sparse_np_to_torch(gradY_np).to(device=device, dtype=dtype)
+    gradX = network_utils.sparse_np_to_torch(gradX_np).to(device=device, dtype=dtype)
+    gradY = network_utils.sparse_np_to_torch(gradY_np).to(device=device, dtype=dtype)
 
     return frames, massvec, L, evals, evecs, gradX, gradY
 
@@ -446,8 +446,8 @@ def get_operators(verts, faces, k_eig=128, op_cache_dir=None, normals=None, over
     #         slows performance with rare extra cache misses.
     found = False
     if op_cache_dir is not None:
-        utils.ensure_dir_exists(op_cache_dir)
-        hash_key_str = str(utils.hash_arrays((verts_np, faces_np)))
+        network_utils.ensure_dir_exists(op_cache_dir)
+        hash_key_str = str(network_utils.hash_arrays((verts_np, faces_np)))
         # print("Building operators for input with hash: " + hash_key_str)
 
         # Search through buckets with matching hashes.  When the loop exits, this
@@ -512,11 +512,11 @@ def get_operators(verts, faces, k_eig=128, op_cache_dir=None, normals=None, over
 
                 frames = torch.from_numpy(frames).to(device=device, dtype=dtype)
                 mass = torch.from_numpy(mass).to(device=device, dtype=dtype)
-                L = utils.sparse_np_to_torch(L).to(device=device, dtype=dtype)
+                L = network_utils.sparse_np_to_torch(L).to(device=device, dtype=dtype)
                 evals = torch.from_numpy(evals).to(device=device, dtype=dtype)
                 evecs = torch.from_numpy(evecs).to(device=device, dtype=dtype)
-                gradX = utils.sparse_np_to_torch(gradX).to(device=device, dtype=dtype)
-                gradY = utils.sparse_np_to_torch(gradY).to(device=device, dtype=dtype)
+                gradX = network_utils.sparse_np_to_torch(gradX).to(device=device, dtype=dtype)
+                gradY = network_utils.sparse_np_to_torch(gradY).to(device=device, dtype=dtype)
                 
                 found = True
                 
@@ -541,9 +541,9 @@ def get_operators(verts, faces, k_eig=128, op_cache_dir=None, normals=None, over
         # Store it in the cache
         if op_cache_dir is not None:
 
-            L_np = utils.sparse_torch_to_np(L).astype(dtype_np)
-            gradX_np = utils.sparse_torch_to_np(gradX).astype(dtype_np)
-            gradY_np = utils.sparse_torch_to_np(gradY).astype(dtype_np)
+            L_np = network_utils.sparse_torch_to_np(L).astype(dtype_np)
+            gradX_np = network_utils.sparse_torch_to_np(gradX).astype(dtype_np)
+            gradY_np = network_utils.sparse_torch_to_np(gradY).astype(dtype_np)
 
             np.savez(search_path,
                      verts=verts_np.astype(dtype_np),
@@ -593,7 +593,7 @@ def from_basis(values, basis):
       - (V,D) reconstructed values
     """
     if values.is_complex() or basis.is_complex():
-        return utils.cmatmul(utils.ensure_complex(basis), utils.ensure_complex(values))
+        return network_utils.cmatmul(network_utils.ensure_complex(basis), network_utils.ensure_complex(values))
     else:
         return torch.matmul(basis, values)
 
@@ -817,8 +817,8 @@ def get_all_pairs_geodesic_distance(verts_np, faces_np, geodesic_cache_dir=None)
     # Check the cache
     found = False 
     if geodesic_cache_dir is not None:
-        utils.ensure_dir_exists(geodesic_cache_dir)
-        hash_key_str = str(utils.hash_arrays((verts_np, faces_np)))
+        network_utils.ensure_dir_exists(geodesic_cache_dir)
+        hash_key_str = str(network_utils.hash_arrays((verts_np, faces_np)))
         # print("Building operators for input with hash: " + hash_key_str)
 
         # Search through buckets with matching hashes.  When the loop exits, this

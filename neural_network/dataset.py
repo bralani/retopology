@@ -7,8 +7,9 @@ from torch.utils.data import Dataset
 
 import potpourri3d as pp3d
 
+from neural_network import diffusion_net
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../src/"))  # path to the DiffusionNet src
-import diffusion_net
 
 def normalize(arrays):
     
@@ -184,7 +185,7 @@ class MeshDataset(Dataset):
 
         # Save to cache
         if use_cache:
-            diffusion_net.utils.ensure_dir_exists(self.cache_dir)
+            diffusion_net.network_utils.ensure_dir_exists(self.cache_dir)
             torch.save((self.verts_list, self.faces_list, self.frames_list, self.massvec_list, self.L_list, self.evals_list, self.evecs_list, self.gradX_list, self.gradY_list, self.targets_list), load_cache)
 
     def __len__(self):

@@ -11,7 +11,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from .utils import toNP
+from .network_utils import toNP
 from .geometry import to_basis, from_basis
 
 class LearnedTimeDiffusion(nn.Module):
