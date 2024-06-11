@@ -316,4 +316,4 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
                             faces=faces)
 
     # save the output
-    trimesh.exchange.export.export_mesh(mesh, 'new_dataset/train/input/triangles/' + file_name + '.obj')
+    trimesh.exchange.export.export_mesh(mesh, 'dataset/train/input/triangles/' + file_name + '.obj')
