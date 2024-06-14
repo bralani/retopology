@@ -3,6 +3,7 @@ from tqdm import tqdm
 
 from neural_network import diffusion_net
 
+'''
 # Loss function for training
 def loss_function_train(theta_pred, phi_pred, theta_target, phi_target):
     loss_theta = (torch.sin(theta_pred-theta_target))**2
@@ -10,8 +11,26 @@ def loss_function_train(theta_pred, phi_pred, theta_target, phi_target):
 
     loss = loss_theta + loss_phi
 
+    return loss'''
+
+
+# Loss function for training
+def loss_function_train(theta_pred, phi_pred, theta_target, phi_target):
+    cos_sim = (torch.sin(phi_pred) * torch.sin(phi_target) * torch.cos(theta_pred - theta_target) + torch.cos(phi_pred) * torch.cos(phi_target))**2
+    
+    return 1 - cos_sim
+
+
+# Loss function for testing
+def loss_function_test(theta_pred, phi_pred, theta_target, phi_target):
+
+    cos_sim = torch.abs(torch.sin(phi_pred) * torch.sin(phi_target) * torch.cos(theta_pred - theta_target) + torch.cos(phi_pred) * torch.cos(phi_target))
+
+    loss = 1 - cos_sim
+
     return loss
 
+'''
 # Loss function for testing
 def loss_function_test(theta_pred, phi_pred, theta_target, phi_target):
     loss_theta = torch.abs(torch.sin(theta_pred-theta_target))
@@ -19,16 +38,17 @@ def loss_function_test(theta_pred, phi_pred, theta_target, phi_target):
 
     loss = loss_theta + loss_phi
 
-    return loss
+    return loss'''
 
 def train_epoch(epoch, decay_every, decay_rate, optimizer, model, train_loader, device, augment_random_rotate, input_features):
 
+    '''
     # Implement lr decay
     if epoch > 0 and epoch % decay_every == 0:
         global lr 
         lr *= decay_rate
         for param_group in optimizer.param_groups:
-            param_group['lr'] = lr 
+            param_group['lr'] = lr'''
 
     # Set model to 'train' mode
     model.train()
@@ -102,7 +122,7 @@ def train_epoch(epoch, decay_every, decay_rate, optimizer, model, train_loader, 
         optimizer.step()
         optimizer.zero_grad()
 
-    train_loss = total_loss / (total_num * 4)
+    train_loss = total_loss / (total_num * 2)
     return train_loss
 
 # Do an evaluation pass on the test dataset 
@@ -172,5 +192,6 @@ def test(model, test_loader, device, input_features):
             # Updates the total count of samples
             total_num += this_num
 
-    test_loss = total_loss / (total_num * 4)
+    test_loss = total_loss / (total_num * 2)
+
     return test_loss
