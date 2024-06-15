@@ -1,5 +1,10 @@
 # Direction Field Extraction through DiffusionNet for Quad Mesh Retopology
 
+## Members:
+- Balice Matteo (10978268)
+- Doronzo Antonio Giuseppe (11016435)
+
+
 ## Project Structure
 The project structure is organized as follows:
 
