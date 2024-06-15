@@ -90,6 +90,8 @@ class MeshDataset(Dataset):
 
             # take random indices of the files
             indices = np.random.permutation(len(mesh_files))
+            # uncomment to use a subset of the data
+            #indices = indices[:50]
 
             mesh_files = [mesh_files[i] for i in indices]
             target_files = [target_files[i] for i in indices]
@@ -104,6 +106,8 @@ class MeshDataset(Dataset):
 
             # take random indices of the files
             indices = np.random.permutation(len(mesh_files))
+            # uncomment to use a subset of the data
+            #indices = indices[:50]
 
             mesh_files = [mesh_files[i] for i in indices]
             target_files = [target_files[i] for i in indices]
