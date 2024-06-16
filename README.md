@@ -10,7 +10,7 @@ The project structure is organized as follows:
 
 - **crest_lines**: Contains the script in C++ for extracting the principal direction and curvatures for each vertice.
 - **neural_network**: Contains the diffusionNet model.
-- **dataset**: Includes the dataset used for training and evaluation.
+- **dataset**: Includes the dataset used for training and evaluation. (Download it from the link below)
 
 ## Setup and Dependencies
 To set up the project environment, follow these steps:
