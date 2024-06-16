@@ -6,7 +6,7 @@ pyvista==0.43.3
 robust_laplacian==0.2.7
 scikit_learn==1.2.0
 scipy==1.13.1
-setuptools==58.1.0
+setuptools>=65.5.1
 torch==2.2.1
 tqdm==4.66.1
 trimesh==4.1.7
