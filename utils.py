@@ -105,15 +105,23 @@ def cartesian_to_spherical(vet):
 
     return theta, phi
 
-def generate_orientations(file):
+def generate_directions_field(file, train=True):
   file_name = os.path.basename(file)
-  file_triangle = "./new_dataset/test/input/triangles/" + file_name
+
+  if train:
+    file_triangle = "./dataset/train/input/triangles/" + file_name
+  else:
+    file_triangle = "./dataset/test/input/triangles/" + file_name
 
   orientation_fields = generate_output(file_triangle, file)
   orientation_fields_reshaped = orientation_fields.reshape(orientation_fields.shape[0], -1)
 
   # save the orientation fields in a txt file
-  output_file = "./new_dataset/test/output/" + file_name
+  if train:
+    output_file = "./dataset/train/output/" + file_name
+  else:
+    output_file = "./dataset/test/output/" + file_name
+
   np.savetxt(output_file, orientation_fields_reshaped)
 
 
@@ -261,7 +269,7 @@ def rotate_scale(url):
 
     rotate(url)
 
-def generate_trimesh(url):
+def generate_trimesh(url, train=True):
 
     print("Preprocessing " + url + " ...")
     # take the name of the file
@@ -279,11 +287,11 @@ def generate_trimesh(url):
     idx = 1
     for subdivide in subdivisions:
         for cluster in clusters:
-            remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster, idx)
+            remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster, idx, train)
             idx += 1
 
 
-def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster, idx):
+def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster, idx, train=True):
     clus = pyacvd.Clustering(mesh)
     clus.subdivide(subdivide)
     clus.cluster(cluster)
@@ -316,4 +324,7 @@ def remeshing(mesh, vertices_output, edges_output, file_name, subdivide, cluster
                             faces=faces)
 
     # save the output
-    trimesh.exchange.export.export_mesh(mesh, 'dataset/train/input/triangles/' + file_name + '.obj')
+    if train:
+        trimesh.exchange.export.export_mesh(mesh, 'dataset/train/input/triangles/' + file_name + '.obj')
+    else:
+        trimesh.exchange.export.export_mesh(mesh, 'dataset/test/input/triangles/' + file_name + '.obj')
